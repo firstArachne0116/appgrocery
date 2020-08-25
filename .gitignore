@@ -1,0 +1,12 @@
+/public/*
+/storage/*
+/vendor/*
+/docs/*
+admin/public/*
+admin/doc/*
+admin/vendor/*
+admin/storage/*
+.env
+admin/.env
+.htaccess
+index.php
