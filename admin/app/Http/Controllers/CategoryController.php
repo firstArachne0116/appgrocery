@@ -269,7 +269,7 @@ public function store(Request $request)
             }
         }        
         $path = Constant::where('constant_type','PRODUCT_IMAGE_PATH')->value('data');        
-        $redata = array('productList' => $productlist, "product_image_path" => $path);
+        $redata = array('productlist' => $productlist, "product_image_path" => $path);
         return $redata;
     }
 
