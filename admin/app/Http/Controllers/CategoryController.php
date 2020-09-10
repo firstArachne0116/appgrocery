@@ -384,7 +384,7 @@ public function store(Request $request)
                         }
                     }
                 }
-                $productlist = subProductlist($request, $sid, $productCategoryIds);
+                $productlist = $this->subProductlist($request, $sid, $productCategoryIds);
                 $path = Constant::where('constant_type','CATEGORY_IMAGE_PATH')->value('data');
                 $message = trans("lang.success");
                 $redata = array('subcategories' => $newsubcategories, 'category_image_path' => $path, 'marketid' => $sid, 'productlist' => $productlist);
