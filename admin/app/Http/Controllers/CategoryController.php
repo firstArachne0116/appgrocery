@@ -309,6 +309,7 @@ public function store(Request $request)
             $userdata = $user->toArray();
         }
         $sid = $request->sid;
+        $cid = $request->cid;
         $validator = Validator::make($request->all(), [
             'sid' => 'bail|required|min:1|int|exists:supermarkets,id',
             'cid' => 'required|min:1|int|exists:categories,parentid'
