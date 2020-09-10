@@ -302,14 +302,14 @@ public function store(Request $request)
     }
 
     
-    public function subProductlist(Request $request, $sid, $cid) {
+    public function subProductlist(Request $request, $sid, $categoryIds) {
         App::setLocale($request->header('locale'));
         $user=auth('api')->user();
         if($user){
             $userdata = $user->toArray();
         }
 
-        $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.' and pc.category_id='.$cid.')')->get()->toArray(); 
+        $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.' and pc.category_id IN ('.join(", ", $categoryIds).'))')->get()->toArray(); 
 		  
         foreach($productlist as $productk =>$productv) {
             foreach($productv['productconfig'] as $pck => $pcv) {  
@@ -368,21 +368,24 @@ public function store(Request $request)
                 }
                 $newsubcategories = array();
                 $subcategories = Category::where('parentid', $cid)->get()->toArray();
-                $productlist = [];
+                $productCategoryIds = [];
                 foreach($subcategories as $subcatk =>$subcatv) {
-                    $scount = Category::where('parentid', $subcatv['id'])->get()->count();
-                    if($scount == '0') {
-                        $prcount = Productconfig::where(['category_id' => $subcatv['id'], 'supermarket_id' => $sid])->get()->count();                        
+                    $productCategories = Category::where('parentid', $subcatv['id'])->get();
+                    if($productCategories->count() == 0) {
+                        $prcount = Productconfig::where(['category_id' => $subcatv['id'], 'supermarket_id' => $sid])->get()->count();
                         if($prcount > '0') {
                             $newsubcategories[] = $subcatv;
-                            $productlist = array_merge($productlist, $this->subProductlist($request, $sid, $subcatv['id']));
+                            $productCategoryIds[] = $subcatv['id'];
                         }
                     } else {
                         $newsubcategories[] = $subcatv;
-                        $productlist = array_merge($productlist, $this->subProductlist($request, $sid, $subcatv['id']));
+                        foreach($productCategories as $spCat) {
+                            $productCategoryIds[] = $spCat['id'];
+                        }
                     }
-                }                
-                $path = Constant::where('constant_type','CATEGORY_IMAGE_PATH')->value('data');                
+                }
+                $productlist = subProductlist($request, $sid, $productCategoryIds);
+                $path = Constant::where('constant_type','CATEGORY_IMAGE_PATH')->value('data');
                 $message = trans("lang.success");
                 $redata = array('subcategories' => $newsubcategories, 'category_image_path' => $path, 'marketid' => $sid, 'productlist' => $productlist);
                 return $this->customerrormessage($message,$redata,200);
