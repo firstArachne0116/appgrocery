@@ -379,7 +379,7 @@ public function store(Request $request)
                         $prcount = Productconfig::where(['category_id' => $subcatv['id'], 'supermarket_id' => $sid])->get()->count();                        
                         if($prcount > '0') {
                             $newsubcategories[] = $subcatv;
-                            $productlist = array_merge($productlist, $this->productlist($request, $sid, $subcatv['id']));
+                            $productlist = array_merge($productlist, $this->subProductlist($request, $sid, $subcatv['id']));
                         }
                     } else {
                         $newsubcategories[] = $subcatv;
