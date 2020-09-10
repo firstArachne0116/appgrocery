@@ -319,7 +319,7 @@ public function store(Request $request)
             return $this->erroroutput($validator);
         }
 
-        $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.' and p.parent_id='.$cid.')')->get()->toArray(); 
+        $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.' and p.parentid='.$cid.')')->get()->toArray(); 
 		  
         foreach($productlist as $productk =>$productv) {
             foreach($productv['productconfig'] as $pck => $pcv) {  
