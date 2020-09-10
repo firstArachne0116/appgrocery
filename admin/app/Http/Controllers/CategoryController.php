@@ -302,24 +302,18 @@ public function store(Request $request)
     }
 
     
-    public function subProductlist(Request $request) {
+    public function subProductlist(Request $request, $sid, $cid) {
         App::setLocale($request->header('locale'));
         $user=auth('api')->user();
         if($user){
             $userdata = $user->toArray();
         }
-        $sid = $request->sid;
-        $cid = $request->cid;
-        $validator = Validator::make($request->all(), [
-            'sid' => 'bail|required|min:1|int|exists:supermarkets,id',
-            'cid' => 'required|min:1|int|exists:categories,parentid'
-        ]);
 
         if ($validator->fails()) {
             return $this->erroroutput($validator);
         }
 
-        $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.' and p.parentid='.$cid.')')->get()->toArray(); 
+        $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.' and pc.category_id='.$cid.')')->get()->toArray(); 
 		  
         foreach($productlist as $productk =>$productv) {
             foreach($productv['productconfig'] as $pck => $pcv) {  
@@ -342,9 +336,7 @@ public function store(Request $request)
                        
             }
         }        
-        $path = Constant::where('constant_type','PRODUCT_IMAGE_PATH')->value('data');        
-        $redata = array('productList' => $productlist, "product_image_path" => $path);
-        return $redata;
+        return $productlist;
     }
 
     public function subcategorylist(Request $request) {
@@ -380,12 +372,14 @@ public function store(Request $request)
                 }
                 $newsubcategories = array();
                 $subcategories = Category::where('parentid', $cid)->get()->toArray();
+                $productlist = [];
                 foreach($subcategories as $subcatk =>$subcatv) {
                     $scount = Category::where('parentid', $subcatv['id'])->get()->count();
                     if($scount == '0') {
                         $prcount = Productconfig::where(['category_id' => $subcatv['id'], 'supermarket_id' => $sid])->get()->count();                        
                         if($prcount > '0') {
                             $newsubcategories[] = $subcatv;
+                            $productlist = array_merge($productlist, $this->productlist($request, $sid, $subcatv['id']));
                         }
                     } else {
                         $newsubcategories[] = $subcatv;
@@ -393,9 +387,7 @@ public function store(Request $request)
                 }                
                 $path = Constant::where('constant_type','CATEGORY_IMAGE_PATH')->value('data');                
                 $message = trans("lang.success");
-                $productlist = $this->subProductlist($request);
-                $redata = array('subcategories' => $newsubcategories, 'category_image_path' => $path, 'marketid' => $sid);
-                $redata = array_merge($redata, $productlist);
+                $redata = array('subcategories' => $newsubcategories, 'category_image_path' => $path, 'marketid' => $sid, 'productlist' => $productlist);
                 return $this->customerrormessage($message,$redata,200);
             } else { }
         }
