@@ -309,10 +309,6 @@ public function store(Request $request)
             $userdata = $user->toArray();
         }
 
-        if ($validator->fails()) {
-            return $this->erroroutput($validator);
-        }
-
         $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.' and pc.category_id='.$cid.')')->get()->toArray(); 
 		  
         foreach($productlist as $productk =>$productv) {
