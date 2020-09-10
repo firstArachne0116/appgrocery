@@ -229,6 +229,49 @@ public function store(Request $request)
         return $mcdata;
     }
 
+    public function productlist(Request $request) {
+        App::setLocale($request->header('locale'));
+        $user=auth('api')->user();
+        if($user){
+            $userdata = $user->toArray();
+        }
+        $sid = $request->sid;
+        $validator = Validator::make($request->all(), [
+            'sid' => 'bail|required|min:1|int|exists:supermarkets,id'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->erroroutput($validator);
+        }
+
+        $productlist = Product::with('supermarket','productconfig')->whereRaw('id IN (select p.id from products p inner join productconfigs pc on pc.product_id=p.id where pc.status=1 and pc.is_enabled=1 and pc.is_approved=1 and pc.supermarket_id='.$sid.')')->get()->toArray(); 
+		  
+        foreach($productlist as $productk =>$productv) {
+            foreach($productv['productconfig'] as $pck => $pcv) {  
+                $unitid = Constant::find($pcv['unit_id'])->data;
+                $productlist[$productk]['productconfig'][$pck]['unit_id'] = $unitid; 
+                $productlist[$productk]['productconfig'][$pck]['variant_name'] =  $productv['name'];
+                $productlist[$productk]['productconfig'][$pck]['variant_name_arabic'] =  $productv['name_arabic'];              
+                $productlist[$productk]['productconfig'][$pck]['wishlist_item'] = '0';
+                $productlist[$productk]['productconfig'][$pck]['weeklylist_item'] = '0';
+                if($user){
+                    $wishlistdata = DB::select("SELECT * FROM wishlists WHERE user_id = '".$userdata['id']."' AND productconfig_id = '".$pcv['id']."'");
+                    $weeklylistdata = DB::select("SELECT * FROM weeklylists WHERE user_id = '".$userdata['id']."' AND productconfig_id = '".$pcv['id']."'");
+                    if(!empty($wishlistdata)) {
+                    $productlist[$productk]['productconfig'][$pck]['wishlist_item'] = '1';
+                    }            
+                    if(!empty($weeklylistdata)) {
+                        $productlist[$productk]['productconfig'][$pck]['weeklylist_item'] = '1';
+                    }  
+                }
+                       
+            }
+        }        
+        $path = Constant::where('constant_type','PRODUCT_IMAGE_PATH')->value('data');        
+        $redata = array('productslist' => $productlist, "product_image_path" => $path);
+        return $redata;
+    }
+
     public function categorylist(Request $request) {
         App::setLocale($request->header('locale'));
         $mcdata = $this->marketcats($request);
@@ -236,7 +279,7 @@ public function store(Request $request)
         if($mcdata) {
             if(isset($mcdata['errors'])) {
                 $msg = $mcdata['errors'];
-                $redata = array('categories'=>array());
+                $redata = array('categories'=>array(), 'products' => array());
                 $data = array(
                     'message' => $msg,
                     'data' => $redata,
@@ -248,7 +291,9 @@ public function store(Request $request)
                     $parentcategories = category::whereIn('id', $categories)->where('parentid', '0')->get()->toArray();
                     $path = Constant::where('constant_type','CATEGORY_IMAGE_PATH')->value('data');                    
                     $message = trans("lang.success");
+                    $productlist = $this->productlist($request);
                     $redata = array('categories' => $parentcategories, 'category_image_path' => $path, 'marketid' => $sid);
+                    $redata = array_merge($redata, $productlist);
                     return $this->customerrormessage($message,$redata,200);
             } else { }
         }
