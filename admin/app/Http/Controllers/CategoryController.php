@@ -383,6 +383,7 @@ public function store(Request $request)
                         }
                     } else {
                         $newsubcategories[] = $subcatv;
+                        $productlist = array_merge($productlist, $this->subProductlist($request, $sid, $subcatv['id']));
                     }
                 }                
                 $path = Constant::where('constant_type','CATEGORY_IMAGE_PATH')->value('data');                
