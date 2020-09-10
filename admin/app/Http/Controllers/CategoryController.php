@@ -8,6 +8,7 @@ use App\Vendor;
 use App\Category;
 use App\Constant;
 use App\Supermarket;
+use App\Product;
 use App\Productconfig;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
