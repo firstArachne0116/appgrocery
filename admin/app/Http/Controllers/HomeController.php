@@ -121,7 +121,8 @@ class HomeController extends Controller
             $userid = Auth::user()->id;
         }
         $latitude   = $request->latitude;
-        $longitude  = $request->longitude;     
+        $longitude  = $request->longitude;
+        $city_id  = $request->city;
         $dist = 30;
         $slideoffers = array();
         if(isset($latitude) && isset($longitude)) {
@@ -142,9 +143,12 @@ class HomeController extends Controller
           longitude between ($longitude-$dist/cos(radians($latitude))*69) 
           and ($longitude+$dist/cos(radians($latitude))*69) 
           and latitude between ($latitude-($dist/69)) 
-          and ($latitude+($dist/69)) and is_enabled=1 having distance < $dist ORDER BY distance limit 100 "); 
-          $listArr = json_decode(json_encode($list), true); 
-        
+          and ($latitude+($dist/69)) and is_enabled=1 having distance < $dist ORDER BY distance limit 100 ");
+          if (isset($city_id)) {
+            $list = Supermarket::where(['city_id' => $city_id,'is_enabled'=>1])->get();
+          }
+          $listArr = json_decode(json_encode($list), true);
+
             if(empty($list)) {
                 $message = trans('lang.emptysupermarket');
                 $redata = array();
